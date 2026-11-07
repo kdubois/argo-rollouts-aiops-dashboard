@@ -802,6 +802,16 @@ body::before {
     border-left-color: rgba(83, 220, 241, 0.9);
 }
 
+// the insight arrives as short lines — verdict, metrics, logs; render the
+// breaks and set the verdict line apart
+.activity-item.insight-event .activity-message {
+    white-space: pre-line;
+
+    &::first-line {
+        font-weight: 600;
+    }
+}
+
 .activity-item.score-event {
     border-left-color: rgba(255, 214, 131, 0.9);
 }
