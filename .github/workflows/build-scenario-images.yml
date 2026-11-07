@@ -145,11 +145,21 @@ jobs:
       - name: Update the demo rollout image
         run: |
           IMAGE="ghcr.io/kdubois/argo-rollouts-quarkus-demo:${{ env.STABLE_VERSION_TAG }}"
-          # only the active image line — the commented alternatives are the
-          # scenario toggle and must survive this update
-          sed -i "s|^\([[:space:]]*\)image: ghcr.io/kdubois/argo-rollouts-quarkus-demo:[^ ]*|\1image: ${IMAGE}|" \
-            workloads/quarkus-rollouts-demo/base/rollout.yaml
-          grep "^[[:space:]]*image: ${IMAGE}" workloads/quarkus-rollouts-demo/base/rollout.yaml
+          FILE=workloads/quarkus-rollouts-demo/base/rollout.yaml
+          # The manifest keeps the five scenario toggles as commented lines and
+          # exactly one active deployed line below them. An active scenario (a
+          # demo in progress) returns to the menu instead of being overwritten,
+          # and the deployed line — the previous stable-<sha> build — is swapped
+          # for this one, or added below the menu after a manual reset.
+          sed -i -E "s,^([[:space:]]*)image: (ghcr.io/kdubois/argo-rollouts-quarkus-demo:(main|v[0-9]+\.[a-z]+))$,\1#image: \2," "$FILE"
+          sed -i -E "\|^[[:space:]]*#image: ghcr.io/kdubois/argo-rollouts-quarkus-demo:stable-[a-f0-9]+$|d" "$FILE"
+          sed -i -E "s,^([[:space:]]*)image: ghcr.io/kdubois/argo-rollouts-quarkus-demo:stable-[a-f0-9]+$,\1image: ${IMAGE}," "$FILE"
+          if ! grep -q "^[[:space:]]*image: ${IMAGE}" "$FILE"; then
+            awk -v line="        image: ${IMAGE}" \
+              '{print} /#image: ghcr.io\/kdubois\/argo-rollouts-quarkus-demo:v4.latency/{print line}' \
+              "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+          fi
+          grep "^[[:space:]]*image: ${IMAGE}" "$FILE"
 
       - name: Open manifest PR
         env:
