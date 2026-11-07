@@ -920,6 +920,9 @@ let sandboxRevertTimer = null;
 let streamTimerInterval = null;
 let streamStartedAt = null;
 let sandboxMisses = 0;
+// one log fetch at a time: the interval keeps firing every 2s, and a slow
+// fetch that overlaps the next one re-appends the same delta twice
+let sandboxLogInFlight = false;
 let lastRootCause = null;
 // the root cause from the REMEDIATION triggered event — deterministic,
 // unlike lastRootCause, which depends on which insight the UI saw last
@@ -1007,7 +1010,8 @@ function startSandboxStream(name) {
 }
 
 function fetchSandboxLog() {
-    if (!sandboxName) return;
+    if (!sandboxName || sandboxLogInFlight) return;
+    sandboxLogInFlight = true;
     fetch('/api/sandbox/' + sandboxName + '/log?after=' + sandboxNextLine)
         .then(r => r.json())
         .then(data => {
@@ -1017,7 +1021,10 @@ function fetchSandboxLog() {
                 markRemediationFinished();
             }
         })
-        .catch(err => console.debug('Sandbox log unavailable:', err.message));
+        .catch(err => console.debug('Sandbox log unavailable:', err.message))
+        .finally(() => {
+            sandboxLogInFlight = false;
+        });
 }
 
 function appendStreamLine(line) {
