@@ -469,6 +469,8 @@ function appendActivityItem(event) {
         if (event.details && event.details.startsWith('Root cause:')) {
             lastRootCause = event.details;
         }
+    } else if (event.type === 'ANALYSIS_METRICS') {
+        item.classList.add('metrics-event');
     } else if (event.type === 'CONFIDENCE_SCORE') {
         item.classList.add('score-event');
     } else if (event.type === 'RETRY') {
@@ -580,6 +582,25 @@ function appendActivityItem(event) {
         return;
     }
 
+    if (event.type === 'ANALYSIS_METRICS') {
+        const table = metricTableHtml(event);
+        if (table) {
+            html = '<div class="activity-dot-indicator ' + typeClass + '"></div>' +
+                '<div class="activity-body">' +
+                '<div class="activity-item-header">' +
+                '<span class="activity-type-badge ' + typeClass + '">' +
+                formatEventType(event.type) + '</span>' + tierBadgeHtml +
+                '<span class="activity-timestamp">' + time + '</span>' +
+                '</div>' + table;
+            item.innerHTML = html;
+            feed.appendChild(item);
+            lastEventId = Math.max(lastEventId, event.id);
+            feed.scrollTop = feed.scrollHeight;
+            return;
+        }
+        // unparseable rows fall through to the generic rendering
+    }
+
     if (event.type === 'DECISION') {
         const isPromote = event.message.includes('Continue');
         html = '<div class="activity-dot-indicator ' + typeClass + '"></div>' +
@@ -615,6 +636,38 @@ function appendActivityItem(event) {
 
     lastEventId = Math.max(lastEventId, event.id);
     feed.scrollTop = feed.scrollHeight;
+}
+
+/**
+ * The ANALYSIS_METRICS event carries canary-vs-stable rows as JSON in its
+ * details; render them as a compact table with pass/fail coloring. Returns
+ * null when the payload isn't parseable (older agent builds) so the caller
+ * falls back to the generic rendering.
+ */
+function metricTableHtml(event) {
+    let rows;
+    try {
+        rows = JSON.parse(event.details);
+    } catch (e) {
+        return null;
+    }
+    if (!Array.isArray(rows) || !rows.length) return null;
+    const head = '<div class="metric-row metric-head">' +
+        '<span class="metric-name">metric</span>' +
+        '<span class="metric-value">canary</span>' +
+        '<span class="metric-vs"></span>' +
+        '<span class="metric-value">stable</span>' +
+        '<span class="metric-verdict"></span></div>';
+    const body = rows.map(function(r) {
+        const fail = r.verdict === 'fail';
+        return '<div class="metric-row ' + (fail ? 'fail' : 'pass') + '">' +
+            '<span class="metric-name">' + escapeHtml(r.name || '') + '</span>' +
+            '<span class="metric-value">' + escapeHtml(r.canary || '—') + '</span>' +
+            '<span class="metric-vs">vs</span>' +
+            '<span class="metric-value">' + escapeHtml(r.stable || '—') + '</span>' +
+            '<span class="metric-verdict">' + (fail ? '✗' : '✓') + '</span></div>';
+    }).join('');
+    return '<div class="metric-table">' + head + body + '</div>';
 }
 
 function resetActivityFeed() {
@@ -710,6 +763,7 @@ function formatEventType(type) {
         'AGENT_START': 'Agent',
         'AGENT_COMPLETE': 'Done',
         'ANALYSIS_INSIGHT': 'Insight',
+        'ANALYSIS_METRICS': 'Metrics',
         'CONFIDENCE_SCORE': 'Confidence',
         'RETRY': 'Retry',
         'ANALYSIS_SUMMARY': 'Summary',
