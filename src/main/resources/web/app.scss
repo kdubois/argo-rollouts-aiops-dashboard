@@ -605,6 +605,10 @@ body::before {
     background: #93f3ff;
 }
 
+.activity-dot-indicator.analysis-metrics {
+    background: #7cd7e8;
+}
+
 .activity-dot-indicator.confidence-score {
     background: #ffe4a9;
 }
@@ -671,6 +675,11 @@ body::before {
     border-color: rgba(83, 220, 241, 0.55);
 }
 
+.activity-type-badge.analysis-metrics {
+    color: #c8f2f8;
+    border-color: rgba(83, 220, 241, 0.4);
+}
+
 .activity-type-badge.confidence-score {
     color: #fff0cd;
     border-color: rgba(255, 214, 131, 0.6);
@@ -732,6 +741,7 @@ body::before {
 .activity-item.remediation-event,
 .activity-item.error-event,
 .activity-item.insight-event,
+.activity-item.metrics-event,
 .activity-item.score-event,
 .activity-item.retry-event,
 .activity-item.summary-event,
@@ -800,6 +810,68 @@ body::before {
 
 .activity-item.insight-event {
     border-left-color: rgba(83, 220, 241, 0.9);
+}
+
+// canary-vs-stable metric rows from the ANALYSIS_METRICS event
+.activity-item.metrics-event {
+    border-left-color: rgba(83, 220, 241, 0.55);
+}
+
+.metric-table {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metric-row {
+    display: grid;
+    grid-template-columns: minmax(72px, 1fr) auto auto auto 16px;
+    gap: 10px;
+    align-items: baseline;
+    padding: 1px 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+}
+
+.metric-row.metric-head {
+    color: var(--text-dim);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.metric-name {
+    color: var(--text-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.metric-value {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.metric-vs {
+    color: var(--text-dim);
+    font-size: 0.64rem;
+}
+
+.metric-verdict {
+    text-align: center;
+    font-weight: 700;
+}
+
+.metric-row.pass .metric-verdict {
+    color: var(--signal-cyan);
+}
+
+.metric-row.fail .metric-verdict {
+    color: var(--signal-red);
+}
+
+.metric-row.fail {
+    background: rgba(255, 122, 143, 0.07);
 }
 
 // the insight arrives as short lines — verdict, metrics, logs; render the
