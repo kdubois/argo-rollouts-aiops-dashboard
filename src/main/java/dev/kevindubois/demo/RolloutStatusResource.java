@@ -90,6 +90,7 @@ public class RolloutStatusResource {
                     null,
                     "Error fetching rollout: " + e.getMessage(),
                     null,
+                    null,
                     null
             );
         }
@@ -148,6 +149,7 @@ public class RolloutStatusResource {
         Integer canaryWeight = canaryWeightFrom(status);
         Integer stableWeight = canaryWeight == null ? null : 100 - canaryWeight;
         Integer currentStepIndex = getCurrentStepIndex(status);
+        Integer revision = getInteger(status, "revision");
 
         AnalysisInfo analysisInfo = getAnalysisInfo(status);
 
@@ -158,7 +160,8 @@ public class RolloutStatusResource {
                 stableWeight,
                 message,
                 analysisInfo,
-                currentStepIndex
+                currentStepIndex,
+                revision
         );
     }
 
@@ -179,15 +182,21 @@ public class RolloutStatusResource {
     }
 
     private Integer getCurrentStepIndex(Map<String, Object> status) {
-        try {
-            Object currentStepIndex = status.get("currentStepIndex");
-            if (currentStepIndex instanceof Number) {
-                return ((Number) currentStepIndex).intValue();
-            }
-        } catch (Exception e) {
-            Log.error("Could not extract current step index", e);
-        }
-        return null;
+        return getInteger(status, "currentStepIndex");
+    }
+
+    /**
+     * The rollout revision from the live status, or {@code null} when the
+     * controller has not published one. The dashboard keys its feed reset on
+     * this: a new revision is a new rollout.
+     */
+    static Integer revisionFrom(Map<String, Object> status) {
+        return getInteger(status, "revision");
+    }
+
+    private static Integer getInteger(Map<String, Object> status, String key) {
+        Object value = status.get(key);
+        return value instanceof Number number ? Integer.valueOf(number.intValue()) : null;
     }
 
     /**
