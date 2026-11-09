@@ -149,7 +149,7 @@ public class RolloutStatusResource {
         Integer canaryWeight = canaryWeightFrom(status);
         Integer stableWeight = canaryWeight == null ? null : 100 - canaryWeight;
         Integer currentStepIndex = getCurrentStepIndex(status);
-        Integer revision = getInteger(status, "revision");
+        String podHash = podHashFrom(status);
 
         AnalysisInfo analysisInfo = getAnalysisInfo(status);
 
@@ -161,7 +161,7 @@ public class RolloutStatusResource {
                 message,
                 analysisInfo,
                 currentStepIndex,
-                revision
+                podHash
         );
     }
 
@@ -186,12 +186,16 @@ public class RolloutStatusResource {
     }
 
     /**
-     * The rollout revision from the live status, or {@code null} when the
-     * controller has not published one. The dashboard keys its feed reset on
-     * this: a new revision is a new rollout.
+     * The current pod-template hash from the live status, or {@code null}
+     * when the controller has not published one. The dashboard keys its feed
+     * reset on this: the hash changes exactly when a new rollout update
+     * starts and stays constant through pauses and weight changes. (The
+     * status carries no numeric revision — that number exists only in the
+     * message text.)
      */
-    static Integer revisionFrom(Map<String, Object> status) {
-        return getInteger(status, "revision");
+    static String podHashFrom(Map<String, Object> status) {
+        Object value = status.get("currentPodHash");
+        return value instanceof String hash && !hash.isBlank() ? hash : null;
     }
 
     private static Integer getInteger(Map<String, Object> status, String key) {
