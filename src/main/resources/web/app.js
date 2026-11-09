@@ -110,22 +110,28 @@ function showDemoMode() {
     }
 }
 
-let lastRolloutPhase = null;
+let lastRolloutRevision = null;
 
 function updateRolloutProgress(rolloutData) {
     const phase = rolloutData.phase || 'Unknown';
 
-    // a new rollout starting clears the remediation log so the previous
-    // run's output is never confused with the current one
-    if (phase === 'Progressing' && lastRolloutPhase && lastRolloutPhase !== 'Progressing') {
-        revertRequestsBox();
-        resetGraderCard();
-        clearActivityFeed();
-        secondOpinionActive = false;
-        lastAnalysisModel = null;
-        lastRootCause = null;
+    // A new rollout is a new revision, not a phase change: Argo Rollouts
+    // reports Paused during every step pause and Progressing again between
+    // them, so the phase alone would clear the feed mid-rollout. The revision
+    // resets the per-rollout UI: the remediation log (so the previous run's
+    // output is never confused with the current one), the grader card, and
+    // the event feed.
+    if (rolloutData.revision !== null && rolloutData.revision !== undefined) {
+        if (lastRolloutRevision !== null && rolloutData.revision !== lastRolloutRevision) {
+            revertRequestsBox();
+            resetGraderCard();
+            clearActivityFeed();
+            secondOpinionActive = false;
+            lastAnalysisModel = null;
+            lastRootCause = null;
+        }
+        lastRolloutRevision = rolloutData.revision;
     }
-    lastRolloutPhase = phase;
     // a Degraded rollout has rolled back: the canary serves no traffic,
     // even while the status still reports the last step's weight
     // the backend reports canaryWeight as null when the live rollout status

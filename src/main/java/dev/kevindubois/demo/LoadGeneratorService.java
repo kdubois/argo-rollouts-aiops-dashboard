@@ -40,20 +40,22 @@ public class LoadGeneratorService {
     
     @ConfigProperty(name = "load.generator.requests.per.second", defaultValue = "50")
     int requestsPerSecond;
-    
-    @ConfigProperty(name = "load.generator.startup.delay", defaultValue = "5s")
-    String startupDelay;
-    
+
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private final AtomicLong totalGeneratedRequests = new AtomicLong(0);
     private volatile boolean initialized = false;
-    
+
     /**
      * Scheduled method that generates load at the configured rate.
      * Runs every second and generates the configured number of requests per second.
      * Quarkus scheduler doesn't support intervals less than 1 second, so we batch the requests.
+     *
+     * The 1-second delay matters for the canary analysis: the first analysis
+     * fetches canary logs roughly five seconds after the pod is ready, and
+     * log-only bug scenarios (the NPE) are only visible once the load
+     * generator has run. A longer delay made that first fetch a coin flip.
      */
-    @Scheduled(every = "1s", delay = 5, delayUnit = java.util.concurrent.TimeUnit.SECONDS)
+    @Scheduled(every = "1s", delay = 1, delayUnit = java.util.concurrent.TimeUnit.SECONDS)
     void generateLoad() {
         if (!enabled) {
             return;

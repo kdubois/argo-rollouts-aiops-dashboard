@@ -79,4 +79,11 @@ class RolloutStatusResourceTest {
         assertNull(RolloutStatusResource.canaryWeightFrom(Map.of()));
         assertNull(RolloutStatusResource.canaryWeightFrom(Map.of("phase", "Progressing")));
     }
+
+    @Test
+    void revisionIsReadFromTheStatus() {
+        assertEquals(78, RolloutStatusResource.revisionFrom(Map.of("revision", 78)));
+        assertNull(RolloutStatusResource.revisionFrom(Map.of("phase", "Progressing")));
+        assertNull(RolloutStatusResource.revisionFrom(Map.of()));
+    }
 }
