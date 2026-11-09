@@ -81,9 +81,10 @@ class RolloutStatusResourceTest {
     }
 
     @Test
-    void revisionIsReadFromTheStatus() {
-        assertEquals(78, RolloutStatusResource.revisionFrom(Map.of("revision", 78)));
-        assertNull(RolloutStatusResource.revisionFrom(Map.of("phase", "Progressing")));
-        assertNull(RolloutStatusResource.revisionFrom(Map.of()));
+    void podHashIsReadFromTheStatus() {
+        assertEquals("867d4bc7b7", RolloutStatusResource.podHashFrom(Map.of("currentPodHash", "867d4bc7b7")));
+        assertNull(RolloutStatusResource.podHashFrom(Map.of("phase", "Progressing")));
+        assertNull(RolloutStatusResource.podHashFrom(Map.of()));
+        assertNull(RolloutStatusResource.podHashFrom(Map.of("currentPodHash", "")));
     }
 }

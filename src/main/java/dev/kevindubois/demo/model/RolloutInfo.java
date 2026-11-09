@@ -8,7 +8,7 @@ public record RolloutInfo(
     String message,
     AnalysisInfo analysis,
     Integer currentStepIndex,
-    Integer revision
+    String podHash
 ) {
     public static RolloutInfo notFound() {
         return new RolloutInfo(
